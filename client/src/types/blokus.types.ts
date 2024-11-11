@@ -1,18 +1,20 @@
+export type Position = { x: number; y: number };
+
 export type Color = "blue" | "yellow" | "red" | "green";
 
 export type Player = {
   id: string;
   name: string;
-  color: string; // Color assigned to player pieces
-  pieces: Piece
+  color: Color; // Color assigned to player pieces
+  pieces: Piece[];
 };
 
 export type Move = {
   playerId: string;
   pieceId: string;
-  position: { x: number; y: number };
+  position: Position;
   rotation: number;
-  flip: boolean;
+  flip: number;
 };
 
 export type GameState = {

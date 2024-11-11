@@ -1,5 +1,5 @@
 <template>
-  <div class="row wrap gap-2 p-4">
+  <div class="row wrap gap-2 p-4" style="max-width: 30rem">
     <BlokusPiece v-for="piece in player.pieces" :color="player.color" :piece="piece"/>
   </div>
 </template>

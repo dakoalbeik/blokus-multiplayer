@@ -1,35 +1,68 @@
 <template>
-  <div :id="piece.id" class="piece" @click="handlePieceClick(piece)">
+  <div
+    :id="piece.id"
+    class="piece"
+    @mousedown="handlePieceMouseDown($event, piece)"
+    :style="{
+      left: position?.x + 'px',
+      top: position?.y + 'px',
+      position: position ? 'absolute' : undefined,
+    }"
+  >
     <div v-for="(row, rowIndex) in piece.shape" :key="rowIndex" class="piece-row">
-      <div
+      <BlokusPieceTile
         v-for="(cell, cellIndex) in row"
         :key="cellIndex"
-        :class="['piece-cell', { [color]: cell === 1, occupied: cell === 1 }]"
-      ></div>
+        :color="color"
+        :occupied="cell === 1"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import type * as Blokus from "../types/blokus.types";
-import type {Move} from "../types/blokus.types";
-import {useGameStore} from "@/stores/game.store";
+import type { Move } from "../types/blokus.types";
+import { useGameStore } from "@/stores/game.store";
+import BlokusPieceTile from "@/components/BlokusPieceTile.vue";
 
-const props = defineProps<{
+defineProps<{
   piece: Blokus.Piece;
   color: Blokus.Color;
   cellSize?: number;
+  position?: Blokus.Position;
 }>();
 
-const gameStore = useGameStore()
+const gameStore = useGameStore();
+let offset: Blokus.Position = { x: 0, y: 0 };
 
-function handlePieceClick(piece: Blokus.Piece) {
-  const move: Move = {pieceId: piece.id, playerId: gameStore.currentPlayer?.id, position: {x: 0, y: 0}}
-  gameStore.socket.emit('makeMove', move)
+function eventToPosition(event: MouseEvent): Blokus.Position {
+  return { x: event.clientX - offset.x, y: event.clientY - offset.y };
 }
 
-// Set default color if not provided
-const pieceColor = props.color || "blue";
+function handleMouseMove(event: MouseEvent) {
+  gameStore.updateDraggedPiecePosition(eventToPosition(event));
+}
+
+function handleMouseUp(event: MouseEvent) {
+  gameStore.stopDragging(eventToPosition(event));
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+}
+
+function handlePieceMouseDown(event: MouseEvent, piece: Blokus.Piece) {
+  const div = event.currentTarget! as HTMLDivElement;
+
+  // Calculate the click position inside the div
+  const rect = div.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+  offset = { x: offsetX, y: offsetY };
+
+  gameStore.startDragging(piece, eventToPosition(event));
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
+}
 </script>
 
 <style scoped>
@@ -40,14 +73,5 @@ const pieceColor = props.color || "blue";
 
 .piece-row {
   display: flex;
-}
-
-.piece-cell {
-  width: 2rem;
-  height: 2rem;
-}
-
-.piece-cell.occupied {
-  border: 1px solid #ccc;
 }
 </style>
