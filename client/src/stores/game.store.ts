@@ -1,35 +1,27 @@
 import {defineStore} from "pinia";
-import {ref} from "vue";
+import {computed, ref} from "vue";
+import type {GameState, Player} from "@/types/blokus.types";
 
-export type Player = {
-  id: string;
-  name: string;
-  color: string; // Color assigned to player pieces
-};
 
-export type Move = {
-  playerId: string;
-  pieceId: string;
-  position: { x: number; y: number };
-  rotation: number;
-  flip: boolean;
-};
-
-export type GameState = {
-  players: Player[];
-  board: number[][]; // 20x20 grid representing the Blokus board
-  currentTurn: string; // ID of the player whose turn it is
-};
 export const useGameStore = defineStore("game", () => {
   // State
-  const gameState: GameState | null = ref(null)
+  const gameState = ref<GameState | null>(null)
+  const playerId = ref("")
 
-  function updateGameState(state: GameState) {
+  const currentPlayer = computed<Player | undefined>(() => {
+    return gameState.value?.players.find(player => player.id === playerId.value)
+  })
+
+  function updateGameState(state: GameState, player_id: string) {
     gameState.value = state;
+    playerId.value = player_id;
   }
+
 
   return {
     gameState,
-    updateGameState
+    currentPlayer,
+    updateGameState,
+
   };
 });

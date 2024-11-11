@@ -1,9 +1,13 @@
 // src/game.ts
 
+import pieces from "../data/pieces";
+import {Piece} from "./piece";
+
 export type Player = {
     id: string;
     name: string;
     color: string; // Color assigned to player pieces
+    pieces: Piece[]
 };
 
 export type Move = {
@@ -31,12 +35,23 @@ export class Game {
         };
     }
 
-    addPlayer(player: Player) {
+    addPlayer(name: string, id: string): boolean {
         if (this.state.players.length < 4) {
+            const player: Player = {id, name, pieces, color: this.getRandomColor()};
             this.state.players.push(player);
             if (this.state.players.length === 1) {
                 this.state.currentTurn = player.id; // First player starts
             }
+            return true;
+        }
+
+        return false;
+    }
+
+    removePlayer(id: string): void {
+        const index = this.state.players.findIndex(player => player.id === id)
+        if (index !== -1) {
+            this.state.players.splice(index, 1)
         }
     }
 
@@ -47,6 +62,12 @@ export class Game {
         // For now, let's assume the move is always valid
         this.state.currentTurn = this.getNextPlayerId();
         return true;
+    }
+
+    // Utility function to assign random colors to players
+    getRandomColor() {
+        const colors = ['red', 'blue', 'green', 'yellow'];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     getState(): GameState {

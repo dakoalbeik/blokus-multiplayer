@@ -1,5 +1,5 @@
 <template>
-  <div class="piece" :id="piece.id">
+  <div :id="piece.id" class="piece">
     <div v-for="(row, rowIndex) in piece.shape" :key="rowIndex" class="piece-row">
       <div
         v-for="(cell, cellIndex) in row"
@@ -34,8 +34,8 @@ const pieceColor = props.color || "blue";
 }
 
 .piece-cell {
-  width: 1rem;
-  height: 1rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .piece-cell.occupied {

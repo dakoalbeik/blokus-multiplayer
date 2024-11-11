@@ -1,18 +1,5 @@
 <script lang="ts" setup>
 import {RouterView} from "vue-router";
-import {io} from "socket.io-client";
-import type {GameState} from "@/stores/game.store";
-import {useGameStore} from "@/stores/game.store";
-
-const gameStore = useGameStore()
-const socket = io('ws://localhost:3000')
-
-socket.connect()
-
-socket.on("gameState", (gameState: GameState) => {
-  gameStore.updateGameState(gameState)
-})
-socket.emit('joinGame', 'dako')
 </script>
 
 <template>
@@ -24,8 +11,8 @@ socket.emit('joinGame', 'dako')
   background-color: red;
 }
 
-.orange {
-  background-color: orange;
+.blue {
+  background-color: blue;
 }
 
 .yellow {
@@ -34,5 +21,30 @@ socket.emit('joinGame', 'dako')
 
 .green {
   background-color: green;
+}
+
+.row {
+  display: flex;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.p-4 {
+  padding: 1rem;
 }
 </style>
