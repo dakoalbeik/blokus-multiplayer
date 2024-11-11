@@ -15,13 +15,12 @@
 </template>
 
 <script lang="ts" setup>
-import {GameState, useGameStore} from "@/stores/game.store";
+import {useGameStore} from "@/stores/game.store";
 import BlokusBoard from '../components/BlokusBoard.vue'
 import BlokusPlayerPieces from '../components/BlokusPlayerPieces.vue'
-import {io} from "socket.io-client";
 import {ref} from "vue";
+import type {GameState} from "@/types/blokus.types";
 
-const socket = io('ws://localhost:3000')
 
 const gameStore = useGameStore()
 const error = ref("")
@@ -29,19 +28,24 @@ const userName = ref("")
 
 function handleJoinBtnClick() {
   if (userName.value.trim()) {
-    socket.emit('joinGame', userName.value)
+    gameStore.socket.emit('joinGame', userName.value)
   } else {
     error.value = "Please enter a name"
   }
 }
 
-socket.connect()
+gameStore.socket.connect()
 
-socket.on("gameState", ({playerId, gameState, color}: { playerId: string, color: string, gameState: GameState }) => {
+gameStore.socket.on("gameState", ({playerId, gameState, color}: {
+  playerId: string,
+  color: string,
+  gameState: GameState
+}) => {
+  console.log({gameState, playerId})
   gameStore.updateGameState(gameState, playerId, color)
 })
 
-socket.on('error', (err) => {
+gameStore.socket.on('error', (err) => {
   error.value = err;
 })
 

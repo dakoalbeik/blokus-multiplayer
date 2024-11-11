@@ -17,7 +17,7 @@ export type Move = {
 
 export type GameState = {
   players: Player[];
-  board: number[][]; // 20x20 grid representing the Blokus board
+  board: (null | Color)[][]; // 20x20 grid representing the Blokus board
   currentTurn: string; // ID of the player whose turn it is
 };
 

@@ -1,14 +1,16 @@
 <template>
   <div class="board">
-    <div v-for="row in board" :key="row[0]" class="row">
-      <div v-for="cell in row" :key="cell" class="cell"/>
+    <div v-for="(row, index) in board" :key="index" class="row">
+      <div v-for="(cell, cellIndex) in row" :key="cellIndex" :class="['cell', {[cell]: cell !== null}]"/>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 
-defineProps<{ board: number[][] }>()
+import type {GameState} from "@/types/blokus.types";
+
+defineProps<{ board: GameState['board'] }>()
 </script>
 
 <style scoped>
