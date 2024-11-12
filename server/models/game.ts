@@ -1,118 +1,226 @@
-// src/game.ts
+import * as BlokusClient from "./../../client/src/types/blokus.types";
 
 import pieces from "../data/pieces";
-import {Piece} from "./piece";
+import { Piece } from "./piece";
 
 export type Player = {
-    id: string;
-    name: string;
-    color: string; // Color assigned to player pieces
-    pieces: Piece[]
-};
-
-export type Move = {
-    playerId: string;
-    pieceId: string;
-    position: { x: number; y: number };
-    rotation: number;
-    flip: boolean;
+  id: string;
+  name: string;
+  color: string; // Color assigned to player pieces
+  pieces: Piece[];
 };
 
 export type GameState = {
-    players: Player[];
-    board: (null | string)[][]; // 20x20 grid representing the Blokus board
-    currentTurn: string; // ID of the player whose turn it is
+  players: Player[];
+  board: (null | string)[][]; // 20x20 grid representing the Blokus board
+  currentTurn: string; // ID of the player whose turn it is
 };
 
 export class Game {
-    private readonly state: GameState;
-    private readonly boardSize = 20
+  private readonly state: GameState;
+  private readonly boardSize = 20;
 
-    constructor() {
-        this.state = {
-            players: [],
-            board: this.createBoard(),
-            currentTurn: ''
-        };
+  constructor() {
+    this.state = {
+      players: [],
+      board: this.createBoard(),
+      currentTurn: "",
+    };
+  }
+
+  addPlayer(name: string, id: string): boolean {
+    if (this.state.players.length < 4) {
+      const player: Player = { id, name, pieces, color: this.getRandomColor() };
+      this.state.players.push(player);
+      if (this.state.players.length === 1) {
+        this.state.currentTurn = player.id; // First player starts
+      }
+      return true;
     }
 
-    addPlayer(name: string, id: string): boolean {
-        if (this.state.players.length < 4) {
-            const player: Player = {id, name, pieces, color: this.getRandomColor()};
-            this.state.players.push(player);
-            if (this.state.players.length === 1) {
-                this.state.currentTurn = player.id; // First player starts
-            }
-            return true;
+    return false;
+  }
+
+  removePlayer(id: string): void {
+    const index = this.state.players.findIndex((player) => player.id === id);
+    if (index !== -1) {
+      this.state.players.splice(index, 1);
+    }
+  }
+
+  getState(): GameState {
+    return this.state;
+  }
+
+  makeMove(move: BlokusClient.Move): string {
+    // Ensure it's the current player's turn
+    if (move.playerId !== this.state.currentTurn) return "Not your turn";
+
+    const player = this.state.players.find(
+      (player) => player.id === move.playerId
+    );
+    if (!player) return "Missing player";
+
+    // Check if the piece ID is valid
+    const pieceIndex = player.pieces.findIndex(
+      (piece) => piece.id === move.pieceId
+    );
+    if (pieceIndex === -1) return "Invalid piece id";
+
+    const piece = player.pieces[pieceIndex];
+
+    // Check if the piece fits on the board
+    if (!this.fitsOnBoard(piece, move.position))
+      return "Piece didn't fit on the board";
+
+    // Check for edge conflicts
+    if (!this.hasNoEdgeConflicts(piece, move.position, player.color))
+      return "Edge conflict";
+
+    // Temporarily place piece to check for corner contact
+    this.placePieceOnBoard(piece, move.position, player.color);
+    if (!this.hasCornerContact(piece, move.position, player.color)) {
+      this.resetPieceOnBoard(piece, move.position); // Undo temporary placement
+      return "Missing corner contact";
+    }
+
+    // Move is valid, finalize placement and update turn
+    player.pieces.splice(pieceIndex, 1);
+    this.state.currentTurn = this.getNextPlayerId();
+    return "";
+  }
+
+  private resetPieceOnBoard(
+    piece: Piece,
+    position: BlokusClient.Position
+  ): void {
+    const { x, y } = position;
+    piece.shape.forEach((row, rowIndex) =>
+      row.forEach((cell, cellIndex) => {
+        if (cell === 1) {
+          this.state.board[y + rowIndex][x + cellIndex] = null;
         }
+      })
+    );
+  }
 
-        return false;
-    }
+  private fitsOnBoard(piece: Piece, position: BlokusClient.Position): boolean {
+    const { x, y } = position;
+    return piece.shape.every((row, rowIndex) =>
+      row.every(
+        (cell, cellIndex) =>
+          cell === 0 ||
+          (x + cellIndex >= 0 &&
+            x + cellIndex < this.state.board[0].length &&
+            y + rowIndex >= 0 &&
+            y + rowIndex < this.state.board.length)
+      )
+    );
+  }
 
-    removePlayer(id: string): void {
-        const index = this.state.players.findIndex(player => player.id === id)
-        if (index !== -1) {
-            this.state.players.splice(index, 1)
+  private hasNoEdgeConflicts(
+    piece: Piece,
+    position: BlokusClient.Position,
+    color: string
+  ): boolean {
+    const { x, y } = position;
+    return piece.shape.every((row, rowIndex) =>
+      row.every((cell, cellIndex) => {
+        if (cell === 0) return true;
+
+        const boardX = x + cellIndex;
+        const boardY = y + rowIndex;
+
+        // Adjacent cells for edge-to-edge conflict check
+        const adjacentCells = [
+          { x: boardX, y: boardY - 1 }, // Top
+          { x: boardX + 1, y: boardY }, // Right
+          { x: boardX, y: boardY + 1 }, // Bottom
+          { x: boardX - 1, y: boardY }, // Left
+        ];
+
+        return adjacentCells.every(
+          (adjacent) =>
+            adjacent.x < 0 ||
+            adjacent.x >= this.state.board[0].length ||
+            adjacent.y < 0 ||
+            adjacent.y >= this.state.board.length ||
+            this.state.board[adjacent.y][adjacent.x] !== color
+        );
+      })
+    );
+  }
+
+  private hasCornerContact(
+    piece: Piece,
+    position: BlokusClient.Position,
+    color: string
+  ): boolean {
+    const { x, y } = position;
+    return piece.shape.some((row, rowIndex) =>
+      row.some((cell, cellIndex) => {
+        if (cell === 0) return false;
+
+        const boardX = x + cellIndex;
+        const boardY = y + rowIndex;
+
+        // Diagonal cells for corner contact check
+        const diagonalCells = [
+          { x: boardX - 1, y: boardY - 1 }, // Top-left
+          { x: boardX + 1, y: boardY - 1 }, // Top-right
+          { x: boardX - 1, y: boardY + 1 }, // Bottom-left
+          { x: boardX + 1, y: boardY + 1 }, // Bottom-right
+        ];
+
+        return diagonalCells.some(
+          (corner) =>
+            corner.x >= 0 &&
+            corner.x < this.state.board[0].length &&
+            corner.y >= 0 &&
+            corner.y < this.state.board.length &&
+            this.state.board[corner.y][corner.x] === color
+        );
+      })
+    );
+  }
+
+  private placePieceOnBoard(
+    piece: Piece,
+    position: BlokusClient.Position,
+    color: string
+  ): void {
+    const { x, y } = position;
+    piece.shape.forEach((row, rowIndex) =>
+      row.forEach((cell, cellIndex) => {
+        if (cell === 1) {
+          this.state.board[y + rowIndex][x + cellIndex] = color;
         }
+      })
+    );
+  }
+
+  // Utility function to assign random colors to players
+  private getRandomColor() {
+    const colors = ["red", "blue", "green", "yellow"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  private createBoard() {
+    const board = [];
+    for (let i = 0; i < this.boardSize; i++) {
+      const row = [];
+      for (let j = 0; j < this.boardSize; j++) {
+        row.push(null);
+      }
+      board.push(row);
     }
+    return board;
+  }
 
-    makeMove(move: Move): boolean {
-        // Placeholder logic for validating and making a move
-        if (move.playerId !== this.state.currentTurn) return false; // Only allow current player
-        // Update board, change turn, etc.
-        const player = this.state.players.find(player => player.id === move.playerId)
-        if (player === undefined) return false;
-        const isValidId = pieces.some(piece => piece.id === move.pieceId)
-        if (!isValidId) return false;
-        // does the user have the piece to play
-        const pieceIndex = player.pieces.findIndex(piece => piece.id === move.pieceId)
-        if (pieceIndex === -1) return false;
-
-        const piece = player.pieces[pieceIndex];
-
-        // TODO: make sure the move is valid
-
-        /**
-         * [1, 0, 0]
-         * [1, 1, 0]
-         */
-        piece.shape.forEach((row, rowIndex) => {
-            row.forEach((cell, cellIndex) => {
-                if (cell === 0) return;
-                this.state.board[move.position.y + rowIndex][move.position.x + cellIndex] = player.color
-            })
-        })
-        // remove the piece from player
-        player.pieces.splice(pieceIndex, 1)
-        // For now, let's assume the move is always valid
-        this.state.currentTurn = this.getNextPlayerId();
-        return true;
-    }
-
-    // Utility function to assign random colors to players
-    getRandomColor() {
-        const colors = ['red', 'blue', 'green', 'yellow'];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
-
-    getState(): GameState {
-        return this.state;
-    }
-
-    private createBoard() {
-        const board = []
-        for (let i = 0; i < this.boardSize; i++) {
-            const row = []
-            for (let j = 0; j < this.boardSize; j++) {
-                row.push(null)
-            }
-            board.push(row)
-        }
-        return board;
-    }
-
-    private getNextPlayerId(): string {
-        const index = this.state.players.findIndex(p => p.id === this.state.currentTurn);
-        return this.state.players[(index + 1) % this.state.players.length].id;
-    }
+  private getNextPlayerId(): string {
+    const index = this.state.players.findIndex(
+      (p) => p.id === this.state.currentTurn
+    );
+    return this.state.players[(index + 1) % this.state.players.length].id;
+  }
 }

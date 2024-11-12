@@ -2,7 +2,9 @@
 import express from "express";
 import { Server } from "socket.io";
 import http from "http";
-import { Game, Move } from "../models/game";
+
+import * as BlokusClient from "../../client/src/types/blokus.types";
+import { Game } from "../models/game";
 
 const app = express();
 const server = http.createServer(app);
@@ -35,23 +37,26 @@ io.on("connection", (socket) => {
 
   socket.on(
     "makeMove",
-    (move: Move, callback: (payload: { success: boolean }) => void) => {
-      let success = true;
+    (
+      move: BlokusClient.Move,
+      callback: (payload: { error: string }) => void
+    ) => {
+      let error = "";
       try {
-        success = game.makeMove(move);
+        error = game.makeMove(move);
       } catch {
-        success = false;
+        error = "Something went wrong";
       }
-      if (success) {
+      if (error) {
+        socket.emit("error", error);
+      } else {
         io.to("blokusGame").emit("gameState", {
           playerId: socket.id,
           gameState: game.getState(),
         }); // Broadcast updated game state
-      } else {
-        socket.emit("error", "Invalid move");
       }
 
-      callback({ success });
+      callback({ error });
     }
   );
 

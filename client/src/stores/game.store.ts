@@ -5,6 +5,7 @@ import { io } from "socket.io-client";
 
 export const useGameStore = defineStore("game", () => {
   // State
+  const error = ref("");
   const gameState = ref<Blokus.GameState | null>(null);
   const playerId = ref("");
   const socket = io("ws://localhost:3000");
@@ -45,6 +46,10 @@ export const useGameStore = defineStore("game", () => {
     draggedPiece.value = { piece, position, color: player.color, index: pieceIndex };
   }
 
+  function updateError(err: string) {
+    error.value = err;
+  }
+
   function dropPiece(finalPosition: Blokus.Position) {
     console.log({ finalPosition });
 
@@ -61,12 +66,12 @@ export const useGameStore = defineStore("game", () => {
         flip: 0,
       };
 
-      socket.emit("makeMove", move, ({ success }: { success: boolean }) => {
-        console.log({ success });
-        if (success) {
-          draggedPiece.value = null;
-        } else {
+      socket.emit("makeMove", move, (payload: { error: string }) => {
+        if (payload.error) {
+          error.value = payload.error;
           resetDrag();
+        } else {
+          draggedPiece.value = null;
         }
       });
     }
@@ -101,6 +106,7 @@ export const useGameStore = defineStore("game", () => {
 
   return {
     socket,
+    error,
     gameState,
     currentPlayer,
     draggedPiece,
@@ -108,6 +114,7 @@ export const useGameStore = defineStore("game", () => {
     startDragging,
     dropPiece,
     resetDrag,
+    updateError,
     updateDraggedPiecePosition,
   };
 });
