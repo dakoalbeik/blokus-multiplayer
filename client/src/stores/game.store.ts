@@ -45,23 +45,36 @@ export const useGameStore = defineStore("game", () => {
     draggedPiece.value = { piece, position, color: player.color, index: pieceIndex };
   }
 
-  function stopDragging(finalPosition: Blokus.Position) {
+  function dropPiece(finalPosition: Blokus.Position) {
     console.log({ finalPosition });
 
-    // TODO: emit message to socket. If things work out add it to the board
-    // otherwise return it to their hand
-
-    // if (gameStore.currentPlayer) {
-    //   const move: Move = {
-    //     pieceId: piece.id,
-    //     playerId: gameStore.currentPlayer?.id,
-    //     position: { x: 0, y: 0 },
-    //     rotation: 0,
-    //     flip: 0,
-    //   };
-    //   gameStore.socket.emit("makeMove", move);
-    // }
     const piecePayload = draggedPiece.value;
+
+    if (piecePayload === null) return;
+
+    if (currentPlayer.value) {
+      const move: Blokus.Move = {
+        pieceId: piecePayload.piece.id,
+        playerId: currentPlayer.value.id,
+        position: finalPosition,
+        rotation: 0,
+        flip: 0,
+      };
+
+      socket.emit("makeMove", move, ({ success }: { success: boolean }) => {
+        console.log({ success });
+        if (success) {
+          draggedPiece.value = null;
+        } else {
+          resetDrag();
+        }
+      });
+    }
+  }
+
+  function resetDrag() {
+    const piecePayload = draggedPiece.value;
+
     if (piecePayload === null) return;
 
     const player = getCurrentPlayer();
@@ -70,7 +83,7 @@ export const useGameStore = defineStore("game", () => {
       throw Error("Missing player");
     }
 
-    // readd the piece to the user if they didn't place it on the board
+    // re-add the piece to the user if they didn't place it on the board
     player.pieces.splice(piecePayload.index, 0, piecePayload.piece);
     draggedPiece.value = null;
   }
@@ -93,7 +106,8 @@ export const useGameStore = defineStore("game", () => {
     draggedPiece,
     updateGameState,
     startDragging,
-    stopDragging,
+    dropPiece,
+    resetDrag,
     updateDraggedPiecePosition,
   };
 });

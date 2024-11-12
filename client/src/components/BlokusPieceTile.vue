@@ -1,12 +1,15 @@
 <template>
   <div
-    :class="['piece-cell', { [color]: occupied, occupied: occupied, bordered: showBorderWhenEmpty }]"
+    :class="[
+      'piece-cell',
+      { [color]: occupied, occupied: occupied, bordered: showBorderWhenEmpty },
+    ]"
   ></div>
 </template>
 <script lang="ts" setup>
-import type * as Blokus from '../types/blokus.types'
+import type * as Blokus from "../types/blokus.types";
 
-defineProps<{ color: Blokus.Color, occupied: boolean, showBorderWhenEmpty?: boolean }>()
+defineProps<{ color: Blokus.Color | ""; occupied: boolean; showBorderWhenEmpty?: boolean }>();
 </script>
 
 <style scoped>

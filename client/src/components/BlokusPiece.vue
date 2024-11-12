@@ -22,7 +22,6 @@
 
 <script lang="ts" setup>
 import type * as Blokus from "../types/blokus.types";
-import type { Move } from "../types/blokus.types";
 import { useGameStore } from "@/stores/game.store";
 import BlokusPieceTile from "@/components/BlokusPieceTile.vue";
 
@@ -44,8 +43,7 @@ function handleMouseMove(event: MouseEvent) {
   gameStore.updateDraggedPiecePosition(eventToPosition(event));
 }
 
-function handleMouseUp(event: MouseEvent) {
-  gameStore.stopDragging(eventToPosition(event));
+function handleMouseUp() {
   document.removeEventListener("mousemove", handleMouseMove);
   document.removeEventListener("mouseup", handleMouseUp);
 }
