@@ -35,11 +35,16 @@ const gameStore = useGameStore();
 
 gameStore.socket.connect();
 
+gameStore.socket.on("gameState", ({ gameState }: { gameState: Blokus.GameState }) => {
+  console.log({ gameState });
+  gameStore.updateGameState(gameState);
+});
+
 gameStore.socket.on(
-  "gameState",
-  ({ playerId, gameState }: { playerId: string; gameState: Blokus.GameState }) => {
-    console.log({ gameState, playerId });
-    gameStore.updateGameState(gameState, playerId);
+  "joinedGame",
+  ({ gameState, playerId }: { gameState: Blokus.GameState; playerId: string }) => {
+    gameStore.joinGame(playerId);
+    gameStore.updateGameState(gameState);
   },
 );
 

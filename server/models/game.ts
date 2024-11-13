@@ -6,7 +6,7 @@ import { Piece } from "./piece";
 export type Player = {
   id: string;
   name: string;
-  color: string; // Color assigned to player pieces
+  color: BlokusClient.Color; // Color assigned to player pieces
   pieces: Piece[];
 };
 
@@ -19,6 +19,12 @@ export type GameState = {
 export class Game {
   private readonly state: GameState;
   private readonly boardSize = 20;
+  private availableColors: BlokusClient.Color[] = [
+    "red",
+    "blue",
+    "green",
+    "yellow",
+  ];
 
   constructor() {
     this.state = {
@@ -30,7 +36,7 @@ export class Game {
 
   addPlayer(name: string, id: string): boolean {
     if (this.state.players.length < 4) {
-      const player: Player = { id, name, pieces, color: this.getRandomColor() };
+      const player: Player = { id, name, pieces, color: this.popRandomColor() };
       this.state.players.push(player);
       if (this.state.players.length === 1) {
         this.state.currentTurn = player.id; // First player starts
@@ -44,6 +50,10 @@ export class Game {
   removePlayer(id: string): void {
     const index = this.state.players.findIndex((player) => player.id === id);
     if (index !== -1) {
+      const player = this.state.players[index];
+      // add colors back in pool
+      this.availableColors.push(player.color);
+      // remove player
       this.state.players.splice(index, 1);
     }
   }
@@ -228,10 +238,22 @@ export class Game {
     );
   }
 
-  // Utility function to assign random colors to players
-  private getRandomColor() {
-    const colors = ["red", "blue", "green", "yellow"];
-    return colors[Math.floor(Math.random() * colors.length)];
+  /**
+   * Utility function to assign a unique color to each player
+   */
+  private popRandomColor(): BlokusClient.Color {
+    if (this.availableColors.length === 0) {
+      throw Error("Failed to assign color. All colors are in use.");
+    }
+
+    // Select a random index within the remaining colors
+    const randomIndex = Math.floor(Math.random() * this.availableColors.length);
+    const color = this.availableColors[randomIndex];
+
+    // Remove the color from the pool to avoid reassigning it
+    this.availableColors.splice(randomIndex, 1);
+
+    return color;
   }
 
   private createBoard() {

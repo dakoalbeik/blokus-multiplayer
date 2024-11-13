@@ -15,6 +15,7 @@ const io = new Server(server, {
   },
 });
 
+const DEFAULT_GAME_NAME = "blokusGame";
 const game = new Game();
 
 io.on("connection", (socket) => {
@@ -23,11 +24,17 @@ io.on("connection", (socket) => {
   socket.on("joinGame", (name: string) => {
     const success = game.addPlayer(name, socket.id);
     if (success) {
-      socket.join("blokusGame"); // Join a room for the game
-      io.to("blokusGame").emit("gameState", {
+      // Join a room for the game
+      socket.join(DEFAULT_GAME_NAME);
+      const gameState = game.getState();
+
+      socket.emit("joinedGame", {
         playerId: socket.id,
-        gameState: game.getState(),
-      }); // Broadcast updated game state
+        gameState,
+      });
+
+      // let other players know
+      socket.broadcast.to("blokusGame").emit("gameState", { gameState });
 
       console.log(`Player joined: ${name}`);
     } else {

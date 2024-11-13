@@ -101,9 +101,12 @@ export const useGameStore = defineStore("game", () => {
     }
   }
 
-  function updateGameState(state: Blokus.GameState, player_id: string) {
+  function updateGameState(state: Blokus.GameState) {
     gameState.value = state;
-    playerId.value = player_id;
+  }
+
+  function joinGame(playerIdParam: string) {
+    playerId.value = playerIdParam;
   }
 
   return {
@@ -113,6 +116,7 @@ export const useGameStore = defineStore("game", () => {
     currentPlayer,
     draggedPiece,
     updateGameState,
+    joinGame,
     startDragging,
     dropPiece,
     resetDrag,
