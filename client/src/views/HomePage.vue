@@ -1,8 +1,12 @@
 <template>
-  <p v-if="error">{{ error }}</p>
+  <p v-if="gameStore.error">{{ gameStore.error }}</p>
   <div v-if="gameStore?.gameState && gameStore.currentPlayer" class="p-4">
     <h1>Blokus</h1>
-    <p>{{ userName }}</p>
+    <div class="row">
+      <div v-for="player in gameStore.gameState.players" :key="player.id" :class="player.color">
+        {{ player.name }}
+      </div>
+    </div>
     <div class="row">
       <BlokusBoard :board="gameStore.gameState.board" />
       <BlokusPlayerPieces :player="gameStore.currentPlayer" />
@@ -15,10 +19,7 @@
     </div>
   </div>
   <div v-else>
-    <div style="display: flex; gap: 1rem">
-      <button @click="handleJoinBtnClick">Join game</button>
-      <input v-model="userName" type="text" />
-    </div>
+    <BlokusJoinGameForm />
   </div>
 </template>
 
@@ -27,20 +28,10 @@ import { useGameStore } from "@/stores/game.store";
 import BlokusBoard from "../components/BlokusBoard.vue";
 import BlokusPlayerPieces from "../components/BlokusPlayerPieces.vue";
 import BlokusPiece from "../components/BlokusPiece.vue";
-import { ref } from "vue";
 import type * as Blokus from "@/types/blokus.types";
+import BlokusJoinGameForm from "@/components/BlokusJoinGameForm.vue";
 
 const gameStore = useGameStore();
-const error = ref("");
-const userName = ref("");
-
-function handleJoinBtnClick() {
-  if (userName.value.trim()) {
-    gameStore.socket.emit("joinGame", userName.value);
-  } else {
-    error.value = "Please enter a name";
-  }
-}
 
 gameStore.socket.connect();
 
@@ -53,6 +44,6 @@ gameStore.socket.on(
 );
 
 gameStore.socket.on("error", (err) => {
-  error.value = err;
+  gameStore.updateError(err);
 });
 </script>

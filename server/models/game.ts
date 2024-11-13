@@ -188,7 +188,7 @@ export class Game {
 
         // check if the player placed their piece with a tile in one of the corners
         const placedInCorner = corners.some(
-          (corner) => corner.x === x && corner.y === y
+          (corner) => corner.x === boardX && corner.y === boardY
         );
 
         if (placedInCorner) return true;

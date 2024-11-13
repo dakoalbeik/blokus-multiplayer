@@ -30,15 +30,8 @@ const numCols = 20; // Number of columns in the Blokus board
 
 // On mounted, calculate the board's offset and size
 onMounted(() => {
-  const boardElement = document.getElementById("board");
-  if (boardElement) {
-    const rect = boardElement.getBoundingClientRect();
-    boardOffset.value = { x: rect.left, y: rect.top };
-    boardSize.value = { width: rect.width, height: rect.height };
-    document.addEventListener("mouseup", handleMouseUp);
-  } else {
-    throw Error("failed to find board by id");
-  }
+  updateBoardInfo();
+  document.addEventListener("mouseup", handleMouseUp);
 });
 
 onUnmounted(() => {
@@ -49,12 +42,26 @@ onUnmounted(() => {
 const cellWidth = computed(() => boardSize.value.width / numCols);
 const cellHeight = computed(() => boardSize.value.height / numRows);
 
+function updateBoardInfo() {
+  const boardElement = document.getElementById("board");
+  if (boardElement) {
+    const rect = boardElement.getBoundingClientRect();
+    boardOffset.value = { x: rect.left, y: rect.top };
+    boardSize.value = { width: rect.width, height: rect.height };
+    document.addEventListener("mouseup", handleMouseUp);
+  } else {
+    throw Error("failed to find board by id");
+  }
+}
+
 function handleMouseUp() {
   const piecePayload = gameStore.draggedPiece;
 
   if (piecePayload === null) return;
 
   const { x, y } = piecePayload.position;
+
+  updateBoardInfo();
 
   // Calculate the board boundaries
   const boardRight = boardOffset.value.x + boardSize.value.width;
