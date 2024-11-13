@@ -1,2 +1,54 @@
-@import './base.css';
+@import "./base.css";
 
+.red {
+  background-color: red;
+  color: white;
+}
+
+.blue {
+  background-color: blue;
+  color: white;
+}
+
+.yellow {
+  background-color: yellow;
+  color: rgb(58, 58, 58);
+}
+
+.green {
+  background-color: green;
+  color: white;
+}
+
+.row {
+  display: flex;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}

@@ -1,12 +1,11 @@
 <template>
-  <p v-if="gameStore.error">{{ gameStore.error }}</p>
   <div v-if="gameStore?.gameState && gameStore.currentPlayer" class="p-4">
     <h1>Blokus</h1>
-    <div class="row">
-      <div v-for="player in gameStore.gameState.players" :key="player.id" :class="player.color">
-        {{ player.name }}
-      </div>
-    </div>
+    <BlokusPlayersSection
+      :players="gameStore.gameState.players"
+      :playerWhoHasTurnId="gameStore.gameState.currentTurn"
+    />
+
     <div class="row">
       <BlokusBoard :board="gameStore.gameState.board" />
       <BlokusPlayerPieces :player="gameStore.currentPlayer" />
@@ -17,6 +16,7 @@
         :position="gameStore.draggedPiece.position"
       />
     </div>
+    <p v-if="gameStore.error">{{ gameStore.error }}</p>
   </div>
   <div v-else>
     <BlokusJoinGameForm />
@@ -30,6 +30,7 @@ import BlokusPlayerPieces from "../components/BlokusPlayerPieces.vue";
 import BlokusPiece from "../components/BlokusPiece.vue";
 import type * as Blokus from "@/types/blokus.types";
 import BlokusJoinGameForm from "@/components/BlokusJoinGameForm.vue";
+import BlokusPlayersSection from "@/components/BlokusPlayersSection.vue";
 
 const gameStore = useGameStore();
 

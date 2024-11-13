@@ -8,7 +8,7 @@
         :occupied="cell !== null"
         :show-border-when-empty="true"
       >
-        <span style="position: absolute; font-size: 0.5rem">{{ cellIndex }} | {{ rowIndex }}</span>
+        <!-- <span style="position: absolute; font-size: 0.5rem">{{ cellIndex }} | {{ rowIndex }}</span> -->
       </BlokusPieceTile>
     </div>
   </div>

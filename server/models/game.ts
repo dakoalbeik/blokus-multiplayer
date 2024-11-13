@@ -1,6 +1,6 @@
 import * as BlokusClient from "./../../client/src/types/blokus.types";
 
-import pieces from "../data/pieces";
+import { BLOKUS_ALL_PIECES } from "../data/pieces";
 import { Piece } from "./piece";
 
 export type Player = {
@@ -36,7 +36,12 @@ export class Game {
 
   addPlayer(name: string, id: string): boolean {
     if (this.state.players.length < 4) {
-      const player: Player = { id, name, pieces, color: this.popRandomColor() };
+      const player: Player = {
+        id,
+        name,
+        pieces: Array.from(BLOKUS_ALL_PIECES),
+        color: this.popRandomColor(),
+      };
       this.state.players.push(player);
       if (this.state.players.length === 1) {
         this.state.currentTurn = player.id; // First player starts
