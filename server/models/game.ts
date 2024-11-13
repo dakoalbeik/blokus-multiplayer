@@ -78,13 +78,14 @@ export class Game {
       return "Edge conflict";
 
     // Temporarily place piece to check for corner contact
-    this.placePieceOnBoard(piece, move.position, player.color);
+    // this.placePieceOnBoard(piece, move.position, player.color);
     if (!this.hasCornerContact(piece, move.position, player.color)) {
-      this.resetPieceOnBoard(piece, move.position); // Undo temporary placement
+      // this.resetPieceOnBoard(piece, move.position); // Undo temporary placement
       return "Missing corner contact";
     }
 
     // Move is valid, finalize placement and update turn
+    this.placePieceOnBoard(piece, move.position, player.color);
     player.pieces.splice(pieceIndex, 1);
     this.state.currentTurn = this.getNextPlayerId();
     return "";
@@ -106,16 +107,24 @@ export class Game {
 
   private fitsOnBoard(piece: Piece, position: BlokusClient.Position): boolean {
     const { x, y } = position;
+    const { width, height } = this.getBoardDimensions();
     return piece.shape.every((row, rowIndex) =>
       row.every(
         (cell, cellIndex) =>
           cell === 0 ||
           (x + cellIndex >= 0 &&
-            x + cellIndex < this.state.board[0].length &&
+            x + cellIndex < width &&
             y + rowIndex >= 0 &&
-            y + rowIndex < this.state.board.length)
+            y + rowIndex < height)
       )
     );
+  }
+
+  private getBoardDimensions() {
+    return {
+      width: this.state.board[0].length,
+      height: this.state.board.length,
+    };
   }
 
   private hasNoEdgeConflicts(
@@ -139,12 +148,16 @@ export class Game {
           { x: boardX - 1, y: boardY }, // Left
         ];
 
+        const { width, height } = this.getBoardDimensions();
+
         return adjacentCells.every(
           (adjacent) =>
+            // if cell position is outside the board then no conflicts
             adjacent.x < 0 ||
-            adjacent.x >= this.state.board[0].length ||
+            adjacent.x >= width ||
             adjacent.y < 0 ||
-            adjacent.y >= this.state.board.length ||
+            adjacent.y >= height ||
+            // if the there is an adjacent, then make sure the color is different
             this.state.board[adjacent.y][adjacent.x] !== color
         );
       })
@@ -164,6 +177,22 @@ export class Game {
         const boardX = x + cellIndex;
         const boardY = y + rowIndex;
 
+        const { width, height } = this.getBoardDimensions();
+
+        const corners = [
+          { x: 0, y: 0 },
+          { x: width - 1, y: 0 },
+          { x: 0, y: height - 1 },
+          { x: width - 1, y: height - 1 },
+        ];
+
+        // check if the player placed their piece with a tile in one of the corners
+        const placedInCorner = corners.some(
+          (corner) => corner.x === x && corner.y === y
+        );
+
+        if (placedInCorner) return true;
+
         // Diagonal cells for corner contact check
         const diagonalCells = [
           { x: boardX - 1, y: boardY - 1 }, // Top-left
@@ -175,9 +204,9 @@ export class Game {
         return diagonalCells.some(
           (corner) =>
             corner.x >= 0 &&
-            corner.x < this.state.board[0].length &&
+            corner.x < width &&
             corner.y >= 0 &&
-            corner.y < this.state.board.length &&
+            corner.y < height &&
             this.state.board[corner.y][corner.x] === color
         );
       })

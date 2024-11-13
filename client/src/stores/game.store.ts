@@ -51,7 +51,7 @@ export const useGameStore = defineStore("game", () => {
   }
 
   function dropPiece(finalPosition: Blokus.Position) {
-    console.log({ finalPosition });
+    console.log("Piece dropped at: ", { x: finalPosition.x, y: finalPosition.y });
 
     const piecePayload = draggedPiece.value;
 
@@ -67,12 +67,14 @@ export const useGameStore = defineStore("game", () => {
       };
 
       socket.emit("makeMove", move, (payload: { error: string }) => {
+        error.value = payload.error;
         if (payload.error) {
-          error.value = payload.error;
           resetDrag();
         } else {
           draggedPiece.value = null;
         }
+
+        console.log("makeMove, error:", payload.error);
       });
     }
   }

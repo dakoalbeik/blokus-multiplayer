@@ -1,13 +1,15 @@
 <template>
   <div id="board" class="board">
-    <div v-for="(row, index) in board" :key="index" class="row">
+    <div v-for="(row, rowIndex) in board" :key="rowIndex" class="row">
       <BlokusPieceTile
         v-for="(cell, cellIndex) in row"
         :key="cellIndex"
         :color="cell ?? ''"
         :occupied="cell !== null"
         :show-border-when-empty="true"
-      />
+      >
+        <span style="position: absolute; font-size: 0.5rem">{{ cellIndex }} | {{ rowIndex }}</span>
+      </BlokusPieceTile>
     </div>
   </div>
 </template>

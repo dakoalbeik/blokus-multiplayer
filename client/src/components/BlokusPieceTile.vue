@@ -4,7 +4,9 @@
       'piece-cell',
       { [color]: occupied, occupied: occupied, bordered: showBorderWhenEmpty },
     ]"
-  ></div>
+  >
+    <slot></slot>
+  </div>
 </template>
 <script lang="ts" setup>
 import type * as Blokus from "../types/blokus.types";
