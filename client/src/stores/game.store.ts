@@ -1,8 +1,12 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import type * as Blokus from "@/types/shared/blokus.types";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { useBlokusDomBoard } from "@/modules/blokus/blokus-board";
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from "@/types/shared/blokus-socket.types";
 
 type DraggedPiece = {
   piece: Blokus.Piece;
@@ -16,7 +20,7 @@ export const useGameStore = defineStore("game", () => {
   const error = ref("");
   const gameState = ref<Blokus.GameState | null>(null);
   const playerId = ref("");
-  const socket = io("ws://localhost:3000");
+  const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io("ws://localhost:3000");
   const draggedPiece = ref<DraggedPiece | null>(null);
   const boardElement = useBlokusDomBoard();
 
@@ -26,18 +30,6 @@ export const useGameStore = defineStore("game", () => {
     socket.on("gameState", ({ gameState }: { gameState: Blokus.GameState }) => {
       console.log({ gameState });
       updateGameState(gameState);
-    });
-
-    socket.on(
-      "joinedGame",
-      ({ gameState, playerId }: { gameState: Blokus.GameState; playerId: string }) => {
-        joinGame(playerId);
-        updateGameState(gameState);
-      },
-    );
-
-    socket.on("error", (err) => {
-      updateError(err);
     });
   }
 
@@ -93,15 +85,13 @@ export const useGameStore = defineStore("game", () => {
         flip: 0,
       };
 
-      socket.emit("makeMove", move, (payload: { error: string }) => {
-        error.value = payload.error;
-        if (payload.error) {
+      socket.emit("makeMove", { move }, (clientError) => {
+        if (clientError) {
+          console.log("makeMove, error:", clientError);
           resetDrag();
         } else {
           draggedPiece.value = null;
         }
-
-        console.log("makeMove, error:", payload.error);
       });
     }
   }
@@ -132,8 +122,15 @@ export const useGameStore = defineStore("game", () => {
     gameState.value = state;
   }
 
-  function joinGame(playerIdParam: string) {
-    playerId.value = playerIdParam;
+  function joinGame(playerName: string) {
+    socket.emit("joinGame", { name: playerName }, (response) => {
+      if (response.status === "success") {
+        playerId.value = response.playerId;
+        gameState.value = response.gameState;
+      } else {
+        error.value = response.reason;
+      }
+    });
   }
 
   return {

@@ -17,7 +17,7 @@ const userName = ref("");
 
 function handleJoinBtnClick() {
   if (userName.value.trim()) {
-    gameStore.socket.emit("joinGame", userName.value);
+    gameStore.joinGame(userName.value.trim());
   } else {
     error.value = "Please enter a name";
   }

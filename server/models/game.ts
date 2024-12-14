@@ -16,27 +16,26 @@ export class BlokusGame {
   constructor() {
     this.state = {
       players: [],
-      board: this.createBoard(),
+      board: this.createEmptyBoard(),
       currentTurn: "" as BlokusClient.PlayerId,
     };
   }
 
-  addPlayer(name: string, socketId: string): boolean {
-    if (this.state.players.length < 4) {
-      const player: BlokusClient.Player = {
-        name,
-        id: socketId as BlokusClient.PlayerId,
-        pieces: Array.from(BLOKUS_ALL_PIECES),
-        color: this.popRandomColor(),
-      };
-      this.state.players.push(player);
-      if (this.state.players.length === 1) {
-        this.state.currentTurn = player.id; // First player starts
-      }
-      return true;
+  addPlayer(name: string, socketId: string): BlokusClient.PlayerId | null {
+    if (this.state.players.length >= 4) {
+      return null;
     }
-
-    return false;
+    const player: BlokusClient.Player = {
+      name,
+      id: socketId as BlokusClient.PlayerId,
+      pieces: Array.from(BLOKUS_ALL_PIECES),
+      color: this.popRandomColor(),
+    };
+    this.state.players.push(player);
+    if (this.state.players.length === 1) {
+      this.state.currentTurn = player.id; // First player starts
+    }
+    return player.id;
   }
 
   removePlayer(id: string): void {
@@ -79,10 +78,7 @@ export class BlokusGame {
     if (!this.hasNoEdgeConflicts(piece, move.position, player.color))
       return "Edge conflict";
 
-    // Temporarily place piece to check for corner contact
-    // this.placePieceOnBoard(piece, move.position, player.color);
     if (!this.hasCornerContact(piece, move.position, player.color)) {
-      // this.resetPieceOnBoard(piece, move.position); // Undo temporary placement
       return "Missing corner contact";
     }
 
@@ -248,7 +244,7 @@ export class BlokusGame {
     return color;
   }
 
-  private createBoard() {
+  private createEmptyBoard() {
     const board = [];
     for (let i = 0; i < this.boardSize; i++) {
       const row = [];

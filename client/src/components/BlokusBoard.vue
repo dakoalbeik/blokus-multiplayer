@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import type { GameState } from "@/types/shared/blokus.types";
 import BlokusPieceTile from "@/components/BlokusPieceTile.vue";
-import { computed, onMounted, onUnmounted, ref, type VNodeRef } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useGameStore } from "@/stores/game.store";
 
 defineProps<{ board: GameState["board"] }>();
