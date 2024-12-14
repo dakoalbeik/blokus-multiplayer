@@ -8,7 +8,10 @@
 
     <div class="game-area">
       <BlokusBoard :board="gameStore.gameState.board" />
-      <BlokusPlayerPieces :player="gameStore.currentPlayer" />
+      <BlokusPlayerPieces
+        :player="gameStore.currentPlayer"
+        :draggablePieceId="gameStore.draggedPiece?.piece.id"
+      />
       <BlokusPiece
         v-if="gameStore.draggedPiece"
         :piece="gameStore.draggedPiece.piece"

@@ -16,10 +16,12 @@ const error = ref("");
 const userName = ref("");
 
 function handleJoinBtnClick() {
-  if (userName.value.trim()) {
-    gameStore.joinGame(userName.value.trim());
-  } else {
+  const playerName = userName.value.trim();
+
+  if (!playerName) {
     error.value = "Please enter a name";
+  } else {
+    gameStore.joinGame(playerName).catch((err) => (error.value = err));
   }
 }
 </script>

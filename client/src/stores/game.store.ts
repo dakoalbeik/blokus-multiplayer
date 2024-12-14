@@ -59,9 +59,6 @@ export const useGameStore = defineStore("game", () => {
       throw Error("Failed to find player for piece");
     }
 
-    // remove from player hand
-    player.pieces.splice(pieceIndex, 1);
-
     draggedPiece.value = { piece, position, color: player.color, index: pieceIndex };
   }
 
@@ -88,27 +85,13 @@ export const useGameStore = defineStore("game", () => {
       socket.emit("makeMove", { move }, (clientError) => {
         if (clientError) {
           console.log("makeMove, error:", clientError);
-          resetDrag();
-        } else {
-          draggedPiece.value = null;
         }
+        resetDrag();
       });
     }
   }
 
   function resetDrag() {
-    const piecePayload = draggedPiece.value;
-
-    if (piecePayload === null) return;
-
-    const player = getCurrentPlayer();
-
-    if (player === undefined) {
-      throw Error("Missing player");
-    }
-
-    // re-add the piece to the user if they didn't place it on the board
-    player.pieces.splice(piecePayload.index, 0, piecePayload.piece);
     draggedPiece.value = null;
   }
 
@@ -122,14 +105,23 @@ export const useGameStore = defineStore("game", () => {
     gameState.value = state;
   }
 
-  function joinGame(playerName: string) {
-    socket.emit("joinGame", { name: playerName }, (response) => {
-      if (response.status === "success") {
-        playerId.value = response.playerId;
-        gameState.value = response.gameState;
-      } else {
-        error.value = response.reason;
-      }
+  /**
+   * Resolves a promise with void, or rejects it with a string error
+   *
+   * @param playerName
+   * @returns
+   */
+  function joinGame(playerName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      socket.emit("joinGame", { name: playerName }, (response) => {
+        if (response.status === "success") {
+          playerId.value = response.playerId;
+          gameState.value = response.gameState;
+          resolve();
+        } else {
+          reject(response.reason);
+        }
+      });
     });
   }
 

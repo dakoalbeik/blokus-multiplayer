@@ -8,6 +8,7 @@
       left: position?.x + 'px',
       top: position?.y + 'px',
       position: position ? 'absolute' : undefined,
+      visibility: hidden ? 'hidden' : 'visible',
     }"
   >
     <div v-for="(row, rowIndex) in piece.shape" :key="rowIndex" class="piece-row">
@@ -32,6 +33,7 @@ defineProps<{
   color: Blokus.Color;
   cellSize?: number;
   position?: Blokus.Position;
+  hidden?: boolean;
 }>();
 
 const gameStore = useGameStore();

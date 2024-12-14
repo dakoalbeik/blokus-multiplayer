@@ -5,13 +5,14 @@
       :key="piece.id"
       :color="player.color"
       :piece="piece"
+      :hidden="piece.id === draggablePieceId"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { Player } from "@/types/shared/blokus.types";
+import type { PieceId, Player } from "@/types/shared/blokus.types";
 import BlokusPiece from "@/components/BlokusPiece.vue";
 
-defineProps<{ player: Player }>();
+defineProps<{ player: Player; draggablePieceId?: PieceId }>();
 </script>
