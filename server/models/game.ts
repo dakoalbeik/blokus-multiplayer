@@ -1,23 +1,10 @@
-import * as BlokusClient from "./../../client/src/types/blokus.types";
+import * as BlokusClient from "./../../client/src/types/shared/blokus.types";
 
 import { BLOKUS_ALL_PIECES } from "../data/pieces";
 import { Piece } from "./piece";
 
-export type Player = {
-  id: string;
-  name: string;
-  color: BlokusClient.Color; // Color assigned to player pieces
-  pieces: Piece[];
-};
-
-export type GameState = {
-  players: Player[];
-  board: (null | string)[][]; // 20x20 grid representing the Blokus board
-  currentTurn: string; // ID of the player whose turn it is
-};
-
-export class Game {
-  private readonly state: GameState;
+export class BlokusGame {
+  private readonly state: BlokusClient.GameState;
   private readonly boardSize = 20;
   private availableColors: BlokusClient.Color[] = [
     "red",
@@ -30,15 +17,15 @@ export class Game {
     this.state = {
       players: [],
       board: this.createBoard(),
-      currentTurn: "",
+      currentTurn: "" as BlokusClient.PlayerId,
     };
   }
 
-  addPlayer(name: string, id: string): boolean {
+  addPlayer(name: string, socketId: string): boolean {
     if (this.state.players.length < 4) {
-      const player: Player = {
-        id,
+      const player: BlokusClient.Player = {
         name,
+        id: socketId as BlokusClient.PlayerId,
         pieces: Array.from(BLOKUS_ALL_PIECES),
         color: this.popRandomColor(),
       };
@@ -63,7 +50,7 @@ export class Game {
     }
   }
 
-  getState(): GameState {
+  getState(): BlokusClient.GameState {
     return this.state;
   }
 
@@ -231,7 +218,7 @@ export class Game {
   private placePieceOnBoard(
     piece: Piece,
     position: BlokusClient.Position,
-    color: string
+    color: BlokusClient.Color
   ): void {
     const { x, y } = position;
     piece.shape.forEach((row, rowIndex) =>
@@ -273,7 +260,7 @@ export class Game {
     return board;
   }
 
-  private getNextPlayerId(): string {
+  private getNextPlayerId(): BlokusClient.PlayerId {
     const index = this.state.players.findIndex(
       (p) => p.id === this.state.currentTurn
     );

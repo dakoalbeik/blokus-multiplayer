@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import type * as Blokus from "@/types/blokus.types";
+import type * as Blokus from "@/types/shared/blokus.types";
 import { io } from "socket.io-client";
 
 export const useGameStore = defineStore("game", () => {

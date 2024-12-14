@@ -28,7 +28,7 @@ import { useGameStore } from "@/stores/game.store";
 import BlokusBoard from "../components/BlokusBoard.vue";
 import BlokusPlayerPieces from "../components/BlokusPlayerPieces.vue";
 import BlokusPiece from "../components/BlokusPiece.vue";
-import type * as Blokus from "@/types/blokus.types";
+import type * as Blokus from "@/types/shared/blokus.types";
 import BlokusJoinGameForm from "@/components/BlokusJoinGameForm.vue";
 import BlokusPlayersSection from "@/components/BlokusPlayersSection.vue";
 

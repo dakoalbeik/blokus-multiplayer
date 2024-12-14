@@ -9,7 +9,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import type * as Blokus from "../types/blokus.types";
+import type * as Blokus from "../types/shared/blokus.types";
 
 defineProps<{ color: Blokus.Color | ""; occupied: boolean; showBorderWhenEmpty?: boolean }>();
 </script>

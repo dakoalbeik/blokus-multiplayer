@@ -3,8 +3,8 @@ import express from "express";
 import { Server } from "socket.io";
 import http from "http";
 
-import * as BlokusClient from "../../client/src/types/blokus.types";
-import { Game } from "../models/game";
+import * as BlokusClient from "../../client/src/types/shared/blokus.types";
+import { BlokusGame } from "../models/game";
 
 const app = express();
 const server = http.createServer(app);
@@ -16,13 +16,14 @@ const io = new Server(server, {
 });
 
 const DEFAULT_GAME_NAME = "blokusGame";
-const game = new Game();
+const game = new BlokusGame();
 
 io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
   socket.on("joinGame", (name: string) => {
-    const success = game.addPlayer(name, socket.id);
+    const playerId = socket.id;
+    const success = game.addPlayer(name, playerId);
     if (success) {
       // Join a room for the game
       socket.join(DEFAULT_GAME_NAME);

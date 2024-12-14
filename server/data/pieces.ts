@@ -1,6 +1,6 @@
-import { Piece } from "../models/piece";
+import * as BlokusClient from "../../client/src/types/shared/blokus.types";
 
-export const BLOKUS_ALL_PIECES: Piece[] = [
+export const BLOKUS_ALL_PIECES: BlokusClient.Piece[] = [
   { id: "p1", shape: [[1]] }, // Single square
 
   { id: "p2", shape: [[1, 1]] }, // Domino (2 squares)

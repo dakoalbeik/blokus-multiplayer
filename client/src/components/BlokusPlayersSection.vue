@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import * as Blokus from "../types/blokus.types";
+import * as Blokus from "../types/shared/blokus.types";
 defineProps<{ players: Blokus.Player[]; playerWhoHasTurnId: string }>();
 </script>
 

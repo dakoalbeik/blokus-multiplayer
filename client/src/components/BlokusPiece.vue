@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts" setup>
-import type * as Blokus from "../types/blokus.types";
+import type * as Blokus from "../types/shared/blokus.types";
 import { useGameStore } from "@/stores/game.store";
 import BlokusPieceTile from "@/components/BlokusPieceTile.vue";
 
