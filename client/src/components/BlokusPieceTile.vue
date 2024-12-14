@@ -1,5 +1,8 @@
 <template>
   <div
+    :style="
+      dimension ? { width: dimension.width + 'px', height: dimension.height + 'px' } : undefined
+    "
     :class="[
       'piece-cell',
       { [color]: occupied, occupied: occupied, bordered: showBorderWhenEmpty },
@@ -11,13 +14,18 @@
 <script lang="ts" setup>
 import type * as Blokus from "../types/shared/blokus.types";
 
-defineProps<{ color: Blokus.Color | ""; occupied: boolean; showBorderWhenEmpty?: boolean }>();
+defineProps<{
+  color: Blokus.Color | "";
+  occupied: boolean;
+  showBorderWhenEmpty?: boolean;
+  dimension?: Blokus.Dimension;
+}>();
 </script>
 
 <style scoped>
 .piece-cell {
-  width: 2rem;
-  height: 2rem;
+  width: calc(100% / 20);
+  height: 100%;
   border-radius: 0.15rem;
   display: flex;
   align-items: center;
@@ -34,7 +42,7 @@ defineProps<{ color: Blokus.Color | ""; occupied: boolean; showBorderWhenEmpty?:
   content: "";
   display: block;
   border-radius: inherit;
-  --dimension: calc(100% - 0.8rem);
+  --dimension: 55%;
   width: var(--dimension);
   height: var(--dimension);
 }

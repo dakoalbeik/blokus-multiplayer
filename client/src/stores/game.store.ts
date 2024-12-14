@@ -2,6 +2,14 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import type * as Blokus from "@/types/shared/blokus.types";
 import { io } from "socket.io-client";
+import { useBlokusDomBoard } from "@/modules/blokus/blokus-board";
+
+type DraggedPiece = {
+  piece: Blokus.Piece;
+  color: Blokus.Color;
+  index: number;
+  position: Blokus.Position;
+};
 
 export const useGameStore = defineStore("game", () => {
   // State
@@ -9,12 +17,31 @@ export const useGameStore = defineStore("game", () => {
   const gameState = ref<Blokus.GameState | null>(null);
   const playerId = ref("");
   const socket = io("ws://localhost:3000");
-  const draggedPiece = ref<{
-    piece: Blokus.Piece;
-    color: Blokus.Color;
-    index: number;
-    position: { x: number; y: number };
-  } | null>(null);
+  const draggedPiece = ref<DraggedPiece | null>(null);
+  const boardElement = useBlokusDomBoard();
+
+  function setupSocketListeners() {
+    socket.connect();
+
+    socket.on("gameState", ({ gameState }: { gameState: Blokus.GameState }) => {
+      console.log({ gameState });
+      updateGameState(gameState);
+    });
+
+    socket.on(
+      "joinedGame",
+      ({ gameState, playerId }: { gameState: Blokus.GameState; playerId: string }) => {
+        joinGame(playerId);
+        updateGameState(gameState);
+      },
+    );
+
+    socket.on("error", (err) => {
+      updateError(err);
+    });
+  }
+
+  setupSocketListeners();
 
   const currentPlayer = computed<Blokus.Player | undefined>(() => {
     return gameState.value?.players.find((player) => player.id === playerId.value);
@@ -115,6 +142,7 @@ export const useGameStore = defineStore("game", () => {
     gameState,
     currentPlayer,
     draggedPiece,
+    boardElement,
     updateGameState,
     joinGame,
     startDragging,

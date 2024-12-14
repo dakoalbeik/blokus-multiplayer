@@ -1,5 +1,7 @@
 export type Position = { x: number; y: number };
 
+export type Dimension = { width: number; height: number };
+
 export type Color = "blue" | "yellow" | "red" | "green";
 
 export type BrandedType<T extends number | string, Brand extends string> = T & { __brand: Brand };

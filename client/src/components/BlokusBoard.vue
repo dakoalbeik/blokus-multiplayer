@@ -1,5 +1,5 @@
 <template>
-  <div id="board" class="board">
+  <div id="blokus-board" class="board">
     <div v-for="(row, rowIndex) in board" :key="rowIndex" class="row">
       <BlokusPieceTile
         v-for="(cell, cellIndex) in row"
@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import type { GameState } from "@/types/shared/blokus.types";
 import BlokusPieceTile from "@/components/BlokusPieceTile.vue";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, type VNodeRef } from "vue";
 import { useGameStore } from "@/stores/game.store";
 
 defineProps<{ board: GameState["board"] }>();
@@ -30,8 +30,11 @@ const numCols = 20; // Number of columns in the Blokus board
 
 // On mounted, calculate the board's offset and size
 onMounted(() => {
-  updateBoardInfo();
-  document.addEventListener("mouseup", handleMouseUp);
+  if (gameStore.boardElement.status === "unmounted") {
+    gameStore.boardElement.mount();
+    updateBoardInfo();
+    document.addEventListener("mouseup", handleMouseUp);
+  }
 });
 
 onUnmounted(() => {
@@ -43,14 +46,11 @@ const cellWidth = computed(() => boardSize.value.width / numCols);
 const cellHeight = computed(() => boardSize.value.height / numRows);
 
 function updateBoardInfo() {
-  const boardElement = document.getElementById("board");
-  if (boardElement) {
-    const rect = boardElement.getBoundingClientRect();
-    boardOffset.value = { x: rect.left, y: rect.top };
-    boardSize.value = { width: rect.width, height: rect.height };
+  if (gameStore.boardElement.status === "mounted") {
+    const { offset, size } = gameStore.boardElement.getPositionInfo();
+    boardOffset.value = offset;
+    boardSize.value = size;
     document.addEventListener("mouseup", handleMouseUp);
-  } else {
-    throw Error("failed to find board by id");
   }
 }
 
@@ -96,9 +96,13 @@ function handleMouseUp() {
   flex-direction: column;
   border: 1px solid grey;
   border-radius: 0.2rem;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 40rem;
 }
 
 .row {
   display: flex;
+  height: calc(100% / 20);
 }
 </style>

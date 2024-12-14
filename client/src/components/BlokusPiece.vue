@@ -1,7 +1,8 @@
 <template>
   <div
-    :id="piece.id"
+    v-if="gameStore.boardElement.status === 'mounted'"
     class="piece"
+    :id="piece.id"
     @mousedown="handlePieceMouseDown($event, piece)"
     :style="{
       left: position?.x + 'px',
@@ -15,6 +16,7 @@
         :key="cellIndex"
         :color="color"
         :occupied="cell === 1"
+        :dimension="gameStore.boardElement.layoutInfo.tileSize"
       />
     </div>
   </div>

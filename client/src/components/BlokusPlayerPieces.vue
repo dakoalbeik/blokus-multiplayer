@@ -1,6 +1,11 @@
 <template>
-  <div class="row wrap gap-2 p-4" style="max-width: 30rem">
-    <BlokusPiece v-for="piece in player.pieces" :color="player.color" :piece="piece" />
+  <div class="row gap-2 p-4" style="overflow-x: auto; width: 100%">
+    <BlokusPiece
+      v-for="piece in player.pieces"
+      :key="piece.id"
+      :color="player.color"
+      :piece="piece"
+    />
   </div>
 </template>
 
