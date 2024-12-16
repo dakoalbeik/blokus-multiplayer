@@ -1,10 +1,19 @@
 <template>
   <div class="p-4" v-if="gameStore.gameState && gameStore.currentPlayer">
-    <h1>Blokus</h1>
-    <BlokusPlayersSection
-      :players="gameStore.gameState.players"
-      :playerWhoHasTurnId="gameStore.gameState.currentTurn"
-    />
+    <div class="banner" v-if="gameStore.gameState.status !== 'ongoing'">
+      <span v-if="gameStore.gameState.status === 'gameover'">Gameover</span>
+      <span v-else-if="gameStore.gameState.status === 'interruption'">A player left</span>
+      <span v-else-if="gameStore.gameState.status === 'waiting'">Waiting on players...</span>
+    </div>
+    <header class="row" style="justify-content: space-between; padding-bottom: 1rem">
+      <div class="column">
+        <h1>Blokus</h1>
+      </div>
+      <BlokusPlayersSection
+        :players="gameStore.gameState.players"
+        :playerWhoHasTurnId="gameStore.gameState.currentTurn"
+      />
+    </header>
 
     <div class="game-area">
       <BlokusBoard :board="gameStore.gameState.board" />
@@ -33,6 +42,24 @@ const gameStore = useGameStore();
 </script>
 
 <style scoped>
+.banner {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(1px);
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+}
+
+.banner > * {
+  background-color: rgb(210, 64, 64);
+  width: 100%;
+  text-align: center;
+  padding-block: 2rem;
+  font-size: 2rem;
+}
+
 .game-area {
   display: flex;
   flex-direction: column;

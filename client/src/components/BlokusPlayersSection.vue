@@ -1,13 +1,13 @@
 <template>
-  <div
-    class="column gap-1"
-    style="padding-block: 1rem; align-items: end; position: absolute; top: 1rem; right: 1rem"
-  >
-    <div v-for="player in players" :key="player.id" class="row gap-2">
-      <div v-if="playerWhoHasTurnId === player.id">👉</div>
-      <div :class="['player', player.color, { current: playerWhoHasTurnId === player.id }]">
-        {{ player.name }}
+  <div class="players-section">
+    <div v-for="player in players" :key="player.id" class="column gap-1">
+      <div
+        :class="['player', player.color, { current: playerWhoHasTurnId === player.id }]"
+        :title="player.name"
+      >
+        {{ player.name.slice(0, 2) }}
       </div>
+      <div v-if="playerWhoHasTurnId === player.id" style="rotate: -90deg">👉</div>
     </div>
   </div>
 </template>
@@ -18,9 +18,17 @@ defineProps<{ players: Blokus.Player[]; playerWhoHasTurnId: Blokus.PlayerId }>()
 </script>
 
 <style scoped>
+.players-section {
+  display: flex;
+  gap: 1rem;
+  align-items: start;
+}
 .player {
   border-radius: 10rem;
-  padding: 0.25rem 0.75rem;
+  aspect-ratio: 1;
+  width: 1.5rem;
+  display: grid;
+  place-items: center;
 }
 .player.current {
   outline: 1px solid white;

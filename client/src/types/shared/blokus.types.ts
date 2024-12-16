@@ -29,7 +29,10 @@ export type Board = (null | Color)[][];
 
 export type Shape = number[][];
 
+export type GameStatus = "gameover" | "ongoing" | "waiting" | "interruption";
+
 export type GameState = {
+  status: GameStatus;
   players: Player[];
   board: Board; // 20x20 grid representing the Blokus board
   currentTurn: PlayerId; // ID of the player whose turn it is

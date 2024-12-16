@@ -13,16 +13,33 @@ export class BlokusGame {
     "yellow",
   ];
 
-  constructor() {
+  constructor(private MIN_MAX_PLAYERS: number = 4) {
     this.state = {
+      status: "waiting",
       players: [],
       board: this.createEmptyBoard(),
       currentTurn: "" as BlokusClient.PlayerId,
     };
   }
 
+  // transition(status: BlokusClient.GameStatus) {
+  //   const manager: Record<
+  //     BlokusClient.GameStatus,
+  //     Array<BlokusClient.GameStatus> | "*"
+  //   > = {
+  //     gameover: [],
+  //     interruption: ["gameover", "interruption", "ongoing"],
+  //     ongoing: [],
+  //     waiting: [],
+  //   };
+  // }
+
+  get playersCount() {
+    return this.state.players.length;
+  }
+
   addPlayer(name: string, socketId: string): BlokusClient.PlayerId | null {
-    if (this.state.players.length >= 4) {
+    if (this.playersCount >= this.MIN_MAX_PLAYERS) {
       return null;
     }
     const player: BlokusClient.Player = {
@@ -32,8 +49,10 @@ export class BlokusGame {
       color: this.popRandomColor(),
     };
     this.state.players.push(player);
-    if (this.state.players.length === 1) {
+    if (this.playersCount === 1) {
       this.state.currentTurn = player.id; // First player starts
+    } else if (this.playersCount === this.MIN_MAX_PLAYERS) {
+      this.state.status = "ongoing";
     }
     return player.id;
   }
@@ -46,6 +65,10 @@ export class BlokusGame {
       this.availableColors.push(player.color);
       // remove player
       this.state.players.splice(index, 1);
+      // if a player leaves while the game is ongoing
+      if (this.state.status === "ongoing") {
+        this.state.status = "interruption";
+      }
     }
   }
 
