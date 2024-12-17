@@ -1,20 +1,20 @@
 <template>
   <div class="players-section">
-    <div v-for="player in players" :key="player.id" class="column gap-1">
+    <div v-for="player in players" :key="player.color" class="column gap-1">
       <div
-        :class="['player', player.color, { current: playerWhoHasTurnId === player.id }]"
+        :class="['player', player.color, { current: playerWhoHasTurn === player.color }]"
         :title="player.name"
       >
         {{ player.name.slice(0, 2) }}
       </div>
-      <div v-if="playerWhoHasTurnId === player.id" style="rotate: -90deg">👉</div>
+      <div v-if="playerWhoHasTurn === player.color" style="rotate: -90deg">👉</div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import * as Blokus from "../types/shared/blokus.types";
-defineProps<{ players: Blokus.Player[]; playerWhoHasTurnId: Blokus.PlayerId }>();
+defineProps<{ players: Blokus.Player[]; playerWhoHasTurn: Blokus.Color }>();
 </script>
 
 <style scoped>

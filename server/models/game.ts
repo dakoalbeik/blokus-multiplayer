@@ -2,10 +2,18 @@ import * as BlokusClient from "./../../client/src/types/shared/blokus.types";
 
 import { BLOKUS_ALL_PIECES } from "../data/pieces";
 import { Piece } from "./piece";
+import { v4 as guid } from "uuid";
+
+type GamePlayer = BlokusClient.Player & {
+  id: BlokusClient.PlayerId;
+  active: boolean;
+};
 
 export class BlokusGame {
-  private readonly state: BlokusClient.GameState;
+  private readonly players: GamePlayer[] = [];
+  private readonly board: BlokusClient.Board = this.createEmptyBoard();
   private readonly boardSize = 20;
+  private readonly _id = guid();
   private availableColors: BlokusClient.Color[] = [
     "red",
     "blue",
@@ -13,13 +21,13 @@ export class BlokusGame {
     "yellow",
   ];
 
-  constructor(private MIN_MAX_PLAYERS: number = 4) {
-    this.state = {
-      status: "waiting",
-      players: [],
-      board: this.createEmptyBoard(),
-      currentTurn: "" as BlokusClient.PlayerId,
-    };
+  private status: BlokusClient.GameStatus = "waiting";
+  private currentTurn = "" as BlokusClient.Color;
+
+  constructor(private MIN_MAX_PLAYERS: number = 4) {}
+
+  public get id() {
+    return this._id;
   }
 
   // transition(status: BlokusClient.GameStatus) {
@@ -34,55 +42,84 @@ export class BlokusGame {
   //   };
   // }
 
-  get playersCount() {
-    return this.state.players.length;
+  public get activePlayers() {
+    return this.players.filter((p) => p.active);
   }
 
-  addPlayer(name: string, socketId: string): BlokusClient.PlayerId | null {
-    if (this.playersCount >= this.MIN_MAX_PLAYERS) {
-      return null;
+  public addPlayer(name: string, clientId: string): GamePlayer | undefined {
+    const activePlayersCount = this.activePlayers.length;
+
+    if (activePlayersCount >= this.MIN_MAX_PLAYERS) {
+      return undefined;
     }
-    const player: BlokusClient.Player = {
+
+    const exisitingPlayer = this.players.find((p) => p.id === clientId);
+
+    if (exisitingPlayer) {
+      exisitingPlayer.active = true;
+      return exisitingPlayer;
+    }
+
+    // brand new player to game
+    const player: GamePlayer = {
       name,
-      id: socketId as BlokusClient.PlayerId,
+      active: true,
+      id: clientId as BlokusClient.PlayerId,
       pieces: Array.from(BLOKUS_ALL_PIECES),
       color: this.popRandomColor(),
     };
-    this.state.players.push(player);
-    if (this.playersCount === 1) {
-      this.state.currentTurn = player.id; // First player starts
-    } else if (this.playersCount === this.MIN_MAX_PLAYERS) {
-      this.state.status = "ongoing";
+
+    this.players.push(player);
+
+    if (activePlayersCount === 1) {
+      this.currentTurn = player.color; // First player starts
+    } else if (activePlayersCount === this.MIN_MAX_PLAYERS) {
+      this.status = "ongoing";
     }
-    return player.id;
+
+    return player;
   }
 
   removePlayer(id: string): void {
-    const index = this.state.players.findIndex((player) => player.id === id);
-    if (index !== -1) {
-      const player = this.state.players[index];
+    const index = this.players.findIndex((player) => player.id === id);
+
+    if (index === -1) return;
+
+    const player = this.players[index];
+    // if a player leaves while the game is ongoing
+    if (this.status === "ongoing") {
+      this.status = "interruption";
+      player.active = false;
+    } else {
       // add colors back in pool
+      // TODO: not sure here if this should happen for interuptions as well?
       this.availableColors.push(player.color);
       // remove player
-      this.state.players.splice(index, 1);
-      // if a player leaves while the game is ongoing
-      if (this.state.status === "ongoing") {
-        this.state.status = "interruption";
-      }
+      this.players.splice(index, 1);
     }
   }
 
   getState(): BlokusClient.GameState {
-    return this.state;
+    const board = this.board;
+    const status = this.status;
+    const currentTurn = this.currentTurn;
+    return {
+      status,
+      board,
+      currentTurn,
+      players: this.players.map<BlokusClient.Player>((p) => ({
+        color: p.color,
+        name: p.name,
+        pieces: p.pieces,
+      })),
+    };
   }
 
   makeMove(move: BlokusClient.Move): string {
     // Ensure it's the current player's turn
-    if (move.playerId !== this.state.currentTurn) return "Not your turn";
+    if (move.color !== this.currentTurn) return "Not your turn";
 
-    const player = this.state.players.find(
-      (player) => player.id === move.playerId
-    );
+    const player = this.players.find((player) => player.color === move.color);
     if (!player) return "Missing player";
 
     // Check if the piece ID is valid
@@ -108,7 +145,7 @@ export class BlokusGame {
     // Move is valid, finalize placement and update turn
     this.placePieceOnBoard(piece, move.position, player.color);
     player.pieces.splice(pieceIndex, 1);
-    this.state.currentTurn = this.getNextPlayerId();
+    this.currentTurn = this.getNextPlayerColor();
     return "";
   }
 
@@ -120,7 +157,7 @@ export class BlokusGame {
     piece.shape.forEach((row, rowIndex) =>
       row.forEach((cell, cellIndex) => {
         if (cell === 1) {
-          this.state.board[y + rowIndex][x + cellIndex] = null;
+          this.board[y + rowIndex][x + cellIndex] = null;
         }
       })
     );
@@ -143,8 +180,8 @@ export class BlokusGame {
 
   private getBoardDimensions() {
     return {
-      width: this.state.board[0].length,
-      height: this.state.board.length,
+      width: this.board[0].length,
+      height: this.board.length,
     };
   }
 
@@ -179,7 +216,7 @@ export class BlokusGame {
             adjacent.y < 0 ||
             adjacent.y >= height ||
             // if the there is an adjacent, then make sure the color is different
-            this.state.board[adjacent.y][adjacent.x] !== color
+            this.board[adjacent.y][adjacent.x] !== color
         );
       })
     );
@@ -228,7 +265,7 @@ export class BlokusGame {
             corner.x < width &&
             corner.y >= 0 &&
             corner.y < height &&
-            this.state.board[corner.y][corner.x] === color
+            this.board[corner.y][corner.x] === color
         );
       })
     );
@@ -243,7 +280,7 @@ export class BlokusGame {
     piece.shape.forEach((row, rowIndex) =>
       row.forEach((cell, cellIndex) => {
         if (cell === 1) {
-          this.state.board[y + rowIndex][x + cellIndex] = color;
+          this.board[y + rowIndex][x + cellIndex] = color;
         }
       })
     );
@@ -279,10 +316,8 @@ export class BlokusGame {
     return board;
   }
 
-  private getNextPlayerId(): BlokusClient.PlayerId {
-    const index = this.state.players.findIndex(
-      (p) => p.id === this.state.currentTurn
-    );
-    return this.state.players[(index + 1) % this.state.players.length].id;
+  private getNextPlayerColor(): BlokusClient.Color {
+    const index = this.players.findIndex((p) => p.id === this.currentTurn);
+    return this.players[(index + 1) % this.players.length].color;
   }
 }

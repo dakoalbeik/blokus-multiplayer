@@ -6,6 +6,7 @@ import {
 import express from "express";
 import { Server } from "socket.io";
 import http from "http";
+import { v4 as guid } from "uuid";
 
 import * as BlokusClient from "../../client/src/types/shared/blokus.types";
 import { BlokusGame } from "../models/game";
@@ -19,23 +20,31 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
   },
 });
 
-const DEFAULT_GAME_NAME = "blokusGame";
-const game = new BlokusGame();
+const __game = new BlokusGame();
+const games = [__game];
+const foundGame = games[0];
 
 io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
-  socket.on("joinGame", ({ name }, joinGameCallback) => {
-    const playerId = game.addPlayer(name, socket.id);
-    if (playerId) {
+  socket.on("joinGame", ({ name, ...lastSession }, joinGameCallback) => {
+    const clientId = "playerId" in lastSession ? lastSession.playerId : guid();
+    const player = foundGame.addPlayer(name, clientId);
+    if (player) {
       // Join a room for the game
-      socket.join(DEFAULT_GAME_NAME);
-      const gameState = game.getState();
+      // TODO: make sure to join the right room
+      socket.join(foundGame.id);
+      const gameState = foundGame.getState();
 
-      joinGameCallback({ status: "success", playerId, gameState });
+      joinGameCallback({
+        gameState,
+        status: "success",
+        playerId: player.id,
+        assignedColor: player.color,
+      });
 
       // let other players know
-      socket.broadcast.to("blokusGame").emit("gameState", { gameState });
+      socket.broadcast.to(foundGame.id).emit("gameState", { gameState });
 
       console.log(`Player joined: ${name}`);
     } else {
@@ -49,7 +58,7 @@ io.on("connection", (socket) => {
   socket.on("makeMove", ({ move }, makeMoveCallback) => {
     let error = "";
     try {
-      error = game.makeMove(move);
+      error = foundGame.makeMove(move);
     } catch {
       error = "Something went wrong";
     }
@@ -58,7 +67,7 @@ io.on("connection", (socket) => {
       makeMoveCallback({ status: "client-error", reason: error });
     } else {
       io.to("blokusGame").emit("gameState", {
-        gameState: game.getState(),
+        gameState: foundGame.getState(),
       });
     }
 
@@ -66,10 +75,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    game.removePlayer(socket.id);
+    foundGame.removePlayer(socket.id);
     socket.broadcast
-      .to(DEFAULT_GAME_NAME)
-      .emit("gameState", { gameState: game.getState() });
+      .to(foundGame.id)
+      .emit("gameState", { gameState: foundGame.getState() });
+
     console.log(`Player disconnected: ${socket.id}`);
   });
 });

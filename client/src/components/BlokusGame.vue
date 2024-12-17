@@ -11,7 +11,7 @@
       </div>
       <BlokusPlayersSection
         :players="gameStore.gameState.players"
-        :playerWhoHasTurnId="gameStore.gameState.currentTurn"
+        :playerWhoHasTurn="gameStore.gameState.currentTurn"
       />
     </header>
 

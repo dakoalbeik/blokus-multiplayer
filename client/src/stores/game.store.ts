@@ -5,6 +5,7 @@ import { io, Socket } from "socket.io-client";
 import { useBlokusDomBoard } from "@/modules/blokus/blokus-board";
 import type {
   ClientToServerEvents,
+  LastSessionPayload,
   ServerToClientEvents,
 } from "@/types/shared/blokus-socket.types";
 
@@ -15,14 +16,35 @@ type DraggedPiece = {
   position: Blokus.Position;
 };
 
+type ClientStatus = "loading" | "ready" | "lobby";
+
+const BLOKUS_LAST_SESSION_KEY = "blokus_last_session";
+
 export const useGameStore = defineStore("game", () => {
   // State
   const error = ref("");
+  const clientStatus = ref<ClientStatus>("loading");
   const gameState = ref<Blokus.GameState | null>(null);
-  const playerId = ref("");
+  const playerId = ref("" as Blokus.PlayerId);
+  const myColor = ref("" as Blokus.Color);
   const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io("ws://localhost:3000");
   const draggedPiece = ref<DraggedPiece | null>(null);
   const boardElement = useBlokusDomBoard();
+
+  function tryPreviousConnection() {
+    const lastSession = localStorage.getItem(BLOKUS_LAST_SESSION_KEY);
+
+    if (lastSession) {
+      try {
+        const sessionData = JSON.parse(lastSession) as LastSessionPayload;
+        socketJoinGame(sessionData);
+      } catch (error) {
+        console.error("Failed to parse session data from localStorage", error);
+      }
+    } else {
+      clientStatus.value = "lobby";
+    }
+  }
 
   function setupSocketListeners() {
     socket.connect();
@@ -31,16 +53,18 @@ export const useGameStore = defineStore("game", () => {
       console.log({ gameState });
       updateGameState(gameState);
     });
+
+    tryPreviousConnection();
   }
 
   setupSocketListeners();
 
   const currentPlayer = computed<Blokus.Player | undefined>(() => {
-    return gameState.value?.players.find((player) => player.id === playerId.value);
+    return gameState.value?.players.find((player) => player.color === myColor.value);
   });
 
   function getCurrentPlayer() {
-    return gameState.value?.players?.find((player) => player.id === playerId.value);
+    return gameState.value?.players?.find((player) => player.color === myColor.value);
   }
 
   function startDragging(piece: Blokus.Piece, position: Blokus.Position) {
@@ -76,7 +100,7 @@ export const useGameStore = defineStore("game", () => {
     if (currentPlayer.value) {
       const move: Blokus.Move = {
         pieceId: piecePayload.piece.id,
-        playerId: currentPlayer.value.id,
+        color: currentPlayer.value.color,
         position: finalPosition,
         rotation: 0,
         flip: 0,
@@ -108,15 +132,21 @@ export const useGameStore = defineStore("game", () => {
   /**
    * Resolves a promise with void, or rejects it with a string error
    *
-   * @param playerName
+   * @param payload information to be sent through socket.io
    * @returns
    */
-  function joinGame(playerName: string): Promise<void> {
+  function socketJoinGame(payload: { name: string } | LastSessionPayload): Promise<void> {
     return new Promise((resolve, reject) => {
-      socket.emit("joinGame", { name: playerName }, (response) => {
+      console.log("joinGame");
+      socket.emit("joinGame", payload, (response) => {
+        console.log(response);
+
         if (response.status === "success") {
           playerId.value = response.playerId;
+          myColor.value = response.assignedColor;
           gameState.value = response.gameState;
+          localStorage.setItem(BLOKUS_LAST_SESSION_KEY, JSON.stringify(payload));
+          clientStatus.value = "ready";
           resolve();
         } else {
           reject(response.reason);
@@ -132,8 +162,9 @@ export const useGameStore = defineStore("game", () => {
     currentPlayer,
     draggedPiece,
     boardElement,
+    clientStatus,
     updateGameState,
-    joinGame,
+    socketJoinGame,
     startDragging,
     dropPiece,
     resetDrag,

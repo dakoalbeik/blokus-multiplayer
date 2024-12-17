@@ -21,7 +21,7 @@ function handleJoinBtnClick() {
   if (!playerName) {
     error.value = "Please enter a name";
   } else {
-    gameStore.joinGame(playerName).catch((err) => (error.value = err));
+    gameStore.socketJoinGame({ name: playerName }).catch((err) => (error.value = err));
   }
 }
 </script>
