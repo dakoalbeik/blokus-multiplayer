@@ -4,12 +4,12 @@ import {
 } from "./../../client/src/types/shared/blokus-socket.types";
 // src/server.ts
 import express from "express";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import http from "http";
 import { v4 as guid } from "uuid";
 
 import * as BlokusClient from "../../client/src/types/shared/blokus.types";
-import { BlokusGame } from "../models/game";
+import { BlokusGame, ClientId } from "../models/game";
 
 const app = express();
 const server = http.createServer(app);
@@ -24,12 +24,18 @@ const __game = new BlokusGame();
 const games = [__game];
 const foundGame = games[0];
 
+function getClientId(socket: Socket) {
+  return socket.id as ClientId;
+}
+
 io.on("connection", (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
   socket.on("joinGame", ({ name, ...lastSession }, joinGameCallback) => {
-    const clientId = "playerId" in lastSession ? lastSession.playerId : guid();
-    const player = foundGame.addPlayer(name, clientId);
+    const playerId =
+      "playerId" in lastSession ? lastSession.playerId : undefined;
+    const clientId = getClientId(socket);
+    const player = foundGame.addPlayer(name, clientId, playerId);
     if (player) {
       // Join a room for the game
       // TODO: make sure to join the right room
@@ -66,7 +72,7 @@ io.on("connection", (socket) => {
     if (error) {
       makeMoveCallback({ status: "client-error", reason: error });
     } else {
-      io.to("blokusGame").emit("gameState", {
+      io.to(foundGame.id).emit("gameState", {
         gameState: foundGame.getState(),
       });
     }
@@ -75,7 +81,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    foundGame.removePlayer(socket.id);
+    const clientId = getClientId(socket);
+    foundGame.removePlayer(clientId);
     socket.broadcast
       .to(foundGame.id)
       .emit("gameState", { gameState: foundGame.getState() });

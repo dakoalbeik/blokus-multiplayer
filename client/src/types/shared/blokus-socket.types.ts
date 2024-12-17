@@ -10,7 +10,7 @@ export interface ServerToClientEvents {
   gameState: (payload: { gameState: GameState }) => void;
 }
 
-export type LastSessionPayload = { name: string; roomId: string; playerId: string };
+export type LastSessionPayload = { name: string; roomId: string; playerId: PlayerId };
 
 export interface ClientToServerEvents {
   joinGame: (

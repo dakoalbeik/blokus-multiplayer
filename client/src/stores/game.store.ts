@@ -18,8 +18,6 @@ type DraggedPiece = {
 
 type ClientStatus = "loading" | "ready" | "lobby";
 
-const BLOKUS_LAST_SESSION_KEY = "blokus_last_session";
-
 export const useGameStore = defineStore("game", () => {
   // State
   const error = ref("");
@@ -31,16 +29,29 @@ export const useGameStore = defineStore("game", () => {
   const draggedPiece = ref<DraggedPiece | null>(null);
   const boardElement = useBlokusDomBoard();
 
-  function tryPreviousConnection() {
-    const lastSession = localStorage.getItem(BLOKUS_LAST_SESSION_KEY);
-
-    if (lastSession) {
+  const lastGameStorage = {
+    BLOKUS_LAST_SESSION_KEY: "blokus_last_session",
+    set(payload: LastSessionPayload) {
+      sessionStorage.setItem(this.BLOKUS_LAST_SESSION_KEY, JSON.stringify(payload));
+    },
+    get(): LastSessionPayload | undefined {
+      const _data = sessionStorage.getItem(this.BLOKUS_LAST_SESSION_KEY);
+      if (_data === null) return undefined;
       try {
-        const sessionData = JSON.parse(lastSession) as LastSessionPayload;
-        socketJoinGame(sessionData);
+        const sessionData = JSON.parse(_data) as LastSessionPayload;
+        return sessionData;
       } catch (error) {
         console.error("Failed to parse session data from localStorage", error);
+        return undefined;
       }
+    },
+  };
+
+  function tryPreviousConnection() {
+    const lastSession = lastGameStorage.get();
+
+    if (lastSession) {
+      socketJoinGame(lastSession);
     } else {
       clientStatus.value = "lobby";
     }
@@ -145,7 +156,7 @@ export const useGameStore = defineStore("game", () => {
           playerId.value = response.playerId;
           myColor.value = response.assignedColor;
           gameState.value = response.gameState;
-          localStorage.setItem(BLOKUS_LAST_SESSION_KEY, JSON.stringify(payload));
+          lastGameStorage.set({ name: payload.name, playerId: response.playerId, roomId: "TODO" });
           clientStatus.value = "ready";
           resolve();
         } else {
